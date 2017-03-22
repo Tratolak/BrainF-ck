@@ -283,16 +283,6 @@ int compile(unsigned char *code,int *jumpTable,int size,bool intOut,char *file,b
 	    //load current command for comparison
 	    rowCode=getOpCode(code[i]);
 
-        //treat while (brackets []) specially (inside switch)
-        if(rowCode!=M_JMP)
-        {
-            //Indentation
-            for(int iter=0;iter<indent;++iter)
-            {
-                fprintf(src,"\t");
-            }
-        }
-
 	    //compare (look ahead)
         if(rowCode!=getOpCode(code[i+1]))
         {
@@ -305,6 +295,15 @@ int compile(unsigned char *code,int *jumpTable,int size,bool intOut,char *file,b
             rowChanged=true;
         }
 
+        //treat while (brackets []) specially (inside switch)
+        if(rowCode!=M_JMP && rowChanged)
+        {
+            //Indentation
+            for(int iter=0;iter<indent;++iter)
+            {
+                fprintf(src,"\t");
+            }
+        }
 
         if(code[i]=='>')
         	rowTimes++;
