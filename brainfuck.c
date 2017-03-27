@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "optimizer.h"
 
 //Added (Martin Stodulka)
 #ifdef _WIN32
@@ -34,10 +35,6 @@
 #define M_JMP 	3
 
 #define MAX_INDENT  5
-
-typedef unsigned char bool;
-#define true 1
-#define false 0
 
 
 int isBFchar(char zn)
@@ -577,7 +574,7 @@ void help()
 }
 
 int main(int argc,char *argv[])
-{
+{/*
 	bool bIntOut=false;
 	bool bHelp=false;
 	bool bCompact=false;
@@ -673,6 +670,11 @@ int main(int argc,char *argv[])
 			break;
 
 
-	}
+	}*/
+
+	Optimizer_Init();
+    Optimizer_printtree();
+    Optimizer_treecleanup();
+
 	return 0;
 }
