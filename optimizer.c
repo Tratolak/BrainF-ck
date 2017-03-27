@@ -25,10 +25,11 @@ void addToActionAry(int *len,int action[][2],int adrShift,unsigned char op)
     if(*len>=ACTION_LIMIT)
         return 1;
     action[*len-1][0]=adrShift;
+    //action[*len-1][1]=0;
     if(op=='+')
-        action[*len-1][1]++;
+        action[*len-1][1]=1;
     if(op=='-')
-        action[*len-1][1]--;
+        action[*len-1][1]=-1;
     return 0;
 }
 
