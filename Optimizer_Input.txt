@@ -1,5 +1,1 @@
 [-]!mem[mPtr]=0;
-+++!mem[mPtr]=strom;
-+-!mem[mPtr]=se;
-++!mem[mPtr]=rad;
-+<!mem[mPtr]=vetvi;

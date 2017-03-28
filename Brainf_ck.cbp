@@ -3,6 +3,7 @@
 	<FileVersion major="1" minor="6" />
 	<Project>
 		<Option title="Brainf_ck" />
+		<Option makefile="makefile" />
 		<Option pch_mode="2" />
 		<Option compiler="gcc" />
 		<Build>
@@ -37,10 +38,11 @@
 		<Unit filename="optimizer.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="otpimizer.h" />
+		<Unit filename="optimizer.h" />
 		<Extensions>
 			<code_completion />
 			<debugger />
+			<envvars />
 		</Extensions>
 	</Project>
 </CodeBlocks_project_file>

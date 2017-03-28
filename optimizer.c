@@ -9,8 +9,9 @@
 
 #define MAXCOMMLEN__    1000
 
-Routine_OctoTree *Root;
+Routine_OctoTree *Root = NULL;
 
+//Recursive tree print
 void Optimizer_printtree_rec(Routine_OctoTree *Root, char *x, int index)
 {
     if(Root->plus != NULL)
@@ -69,13 +70,14 @@ void Optimizer_printtree_rec(Routine_OctoTree *Root, char *x, int index)
     }
 }
 
+//Dummy function - Recursive tree print
 void Optimizer_printtree()
 {
     char *x = malloc(sizeof(char)*100);
 
     if(x==NULL)
     {
-        printf("Failed to print tree: alloc fail\n");
+        printf("Optimizer Error: Allocation Error\n");
         return;
     }
 
@@ -84,6 +86,7 @@ void Optimizer_printtree()
     free(x);
 }
 
+//Recursive tree deallocation
 void Optimizer_treecleanup_rec(Routine_OctoTree *Root)
 {
     if(Root->plus != NULL)
@@ -130,6 +133,7 @@ void Optimizer_treecleanup_rec(Routine_OctoTree *Root)
     free(Root->subst);
 }
 
+//Dummy function - Recursive tree deallocation
 void Optimizer_treecleanup()
 {
     Optimizer_treecleanup_rec(Root);
@@ -144,7 +148,7 @@ void Optimizer_cleanstr(char *x,int length)
     }
 }
 
-//Copies length character from source to destination
+//Copies length character from source to destination and puts 0 byte at the end
 void Optimizer_strcpy(char *src, char *dest,int length)
 {
     int i = 0;
@@ -163,7 +167,7 @@ int Optimizer_Create_Node(Routine_OctoTree **Node)
 
     if(tmp_Node == NULL)
     {
-        printf("Allocation Error");
+        printf("Optimizer Error: Allocation Error");
         return -1;
     }
 
@@ -184,43 +188,156 @@ int Optimizer_Create_Node(Routine_OctoTree **Node)
     return 0;
 }
 
-//Read routines from text file
-int Optimizer_Init()
+//Tries to find routine at 'index' of 'code'
+//Returns NULL if nothings was found
+//Returns substitution string and changes index if routine found
+char* Optimizer_Read(char *code, int *index)
 {
-    Root = malloc(sizeof(Routine_OctoTree));
+    int i = *(index);
 
-    if(Root == NULL)
+    Routine_OctoTree *current_path = Root;
+    bool break_ = false;
+
+    while(code[i] != '!' && !break_)
     {
-        printf("Allocation Error\n");
-        return -1;
+        switch(code[i])
+        {
+            case '+':
+                if(current_path->plus == NULL)
+                {
+                    break_ = true;
+                }
+                else
+                {
+                    current_path = current_path->plus;
+                }
+                break;
+            case '-':
+                if(current_path->minus == NULL)
+                {
+                    break_ = true;
+                }
+                else
+                {
+                   current_path = current_path->minus;
+                }
+                break;
+            case '>':
+                if(current_path->plsptr == NULL)
+                {
+                    break_ = true;
+                }
+                else
+                {
+                   current_path = current_path->plsptr;
+                }
+                break;
+            case '<':
+                if(current_path->mnsptr == NULL)
+                {
+                    break_ = true;
+                }
+                else
+                {
+                    current_path = current_path->mnsptr;
+                }
+                break;
+            case ',':
+                if(current_path->comma == NULL)
+                {
+                    break_ = true;
+                }
+                else
+                {
+                    current_path = current_path->comma;
+                }
+                break;
+            case '.':
+                if(current_path->dot == NULL)
+                {
+                    break_ = true;
+                }
+                else
+                {
+                    current_path = current_path->dot;
+                }
+                break;
+            case '[':
+                if(current_path->lbracket == NULL)
+                {
+                    break_ = true;
+                }
+                else
+                {
+                    current_path = current_path->lbracket;
+                }
+                break;
+            case ']':
+                if(current_path->rbracket == NULL)
+                {
+                    break_ = true;
+                }
+                else
+                {
+                    current_path = current_path->rbracket;
+                }
+                break;
+            default:
+
+                break;
+        }
+
+        //for printing in initial brainfuck.c file
+        if(i != *index && !break_)
+        {
+            putchar(code[i]);
+        }
+
+        i++;
     }
 
-    Root->plus = NULL;
-    Root->minus = NULL;
-    Root->rbracket = NULL;
-    Root->lbracket = NULL;
-    Root->comma = NULL;
-    Root->dot = NULL;
-    Root->plsptr = NULL;
-    Root->mnsptr = NULL;
-    Root->repeated = false;
-    Root->subst = NULL;
-    Root->subst_size = 0;
+    if(current_path->subst != NULL)
+    {
+        //to return index correctly
+        *index = i;
+
+        if(code[i] != '!')
+        {
+            *index -= 1;
+        }
+
+        return current_path->subst;
+    }
+
+    return NULL;
+}
+
+//Read routines from text file and initialize Optimizer
+int Optimizer_Init()
+{
+    if(Root != NULL)
+    {
+        printf("Optimizer Error: Optimizer already initialized");
+        return -5;
+    }
+
+    //Init Root
+    Optimizer_Create_Node(&Root);
 
     FILE *Input;
     Input = fopen(DEFPATH__,"r");
 
     if(Input == NULL)
 	{
-	    printf("Cannot open routine file\n");
+	    printf("Optimizer Error: Cannot open routine file\n");
 		return -4;
 	}
 
-    int x;
-    int mode = ROUTINE__;
-    int length = 0;
-    char read[MAXCOMMLEN__] = {0};
-    Routine_OctoTree *current_path = Root;
+    int x;                                  //Current character read from file
+    int mode = ROUTINE__;                   //Current read automat mode
+    int length = 0;                         //Length of currently read string
+    char read[MAXCOMMLEN__] = {0};          //Currently read string
+    Routine_OctoTree *current_path = Root;  //Current path in Octo tree
 
     while((x=fgetc(Input))!=EOF)
     {
@@ -241,7 +358,7 @@ int Optimizer_Init()
 
                 if(current_path->subst == NULL)
                 {
-                    printf("Allocation Error\n");
+                    printf("Optimizer Error: Allocation Error\n");
                     return -1;
                 }
 
@@ -255,13 +372,14 @@ int Optimizer_Init()
             }
             else
             {
-                printf("Syntax Error: No substitution found for routine\n");
+                printf("Optimizer Error: No substitution found for routine\n");
                 return -2;
             }
 
             continue;
         }
 
+        //Browse through tree
         if(mode == ROUTINE__)
         {
             switch(x)
@@ -336,11 +454,12 @@ int Optimizer_Init()
             }
         }
 
+        //Read substitution string
         if(mode == SUBST__)
         {
             if(length >= MAXCOMMLEN__)
             {
-                printf("Error: maximum element length exceeded\n");
+                printf("Optimizer Error: maximum element length exceeded\n");
                 return -3;
             }
 

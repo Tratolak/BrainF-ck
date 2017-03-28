@@ -32,5 +32,6 @@ void Optimizer_cleanstr(char *x,int length);
 void Optimizer_treecleanup();
 void Oprimizer_printtree();
 int Optimizer_Create_Node(Routine_OctoTree **Node);
+char* Optimizer_Read(char *code, int *index);
 
 #endif // OTPIMIZER_INCLUDED

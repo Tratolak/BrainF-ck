@@ -233,6 +233,9 @@ int compile(unsigned char *code,int *jumpTable,int size,bool intOut,char *file,b
     int rowTimes=0;				// how many times repeated >,<
     bool rowChanged=false;   //1 if current command changed, 0 otherwise
 
+    //Optimizer
+    char *substitution = NULL;
+
     //indentation
     unsigned int indent=1;  //number of tab indentations
 
@@ -310,6 +313,23 @@ int compile(unsigned char *code,int *jumpTable,int size,bool intOut,char *file,b
         	sum++;
         if(code[i]=='-')
         	sum--;
+
+        substitution = Optimizer_Read(code, &i);
+        if(substitution != NULL)
+        {
+            for(int iter=0;iter<indent;++iter)
+            {
+                fprintf(src,"\t");
+            }
+
+            fprintf(src,"%s\n",substitution);
+
+            rowChanged=false;
+            sum=0;
+            rowTimes=0;
+
+            continue;
+        }
 
         if(rowChanged==true)
         {
@@ -574,7 +594,12 @@ void help()
 }
 
 int main(int argc,char *argv[])
-{/*
+{
+    if(Optimizer_Init() != 0)
+    {
+        return -1;
+    }
+
 	bool bIntOut=false;
 	bool bHelp=false;
 	bool bCompact=false;
@@ -670,10 +695,8 @@ int main(int argc,char *argv[])
 			break;
 
 
-	}*/
+	}
 
-	Optimizer_Init();
-    Optimizer_printtree();
     Optimizer_treecleanup();
 
 	return 0;
