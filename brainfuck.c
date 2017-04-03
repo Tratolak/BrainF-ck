@@ -234,7 +234,7 @@ void optimizePrint(FILE *out,int *jumpTable,int tabs)
 {
 
     //("tab: ");
-    for(int i=0;i<jumpTable[0];i+=2)
+    for(int i=0;i<abs(jumpTable[0]);i+=2)
     {
         //printf("%d, %d, ",jumpTable[i+1],jumpTable[i+2]);
         int shift=jumpTable[i+1];
@@ -244,7 +244,10 @@ void optimizePrint(FILE *out,int *jumpTable,int tabs)
 
         for(int it=0;it<tabs;it++)
             fprintf(out,"\t");
-        fprintf(out,"mem[mPtr+(%d)]+=(%d)*mem[mPtr];\n",shift,mul);
+        if(jumpTable[0]<0)
+            fprintf(out,"mem[mPtr+(%d)]+=(%d)*mem[mPtr];\n",shift,mul);
+        else
+            fprintf(out,"mem[mPtr+(%d)]+=(256-(%d))*mem[mPtr];\n",shift,mul);
     }
     //printf("HURááá2");
     for(int it=0;it<tabs;it++)
@@ -467,7 +470,7 @@ int interpret(int size,bool intOut,bool bCompile,bool bNoBuild,char *file)
 	}
 
     //DEBUG
-    optimize(code,jumpTable,size);
+
     //printf("Optimized\n");
     /*free(code);
     free(mem);
@@ -483,6 +486,7 @@ int interpret(int size,bool intOut,bool bCompile,bool bNoBuild,char *file)
 	else
 	{
 		// Compile
+		optimize(code,jumpTable,size);
 		compile(code,jumpTable,size,intOut,file,bNoBuild);
 	}
 

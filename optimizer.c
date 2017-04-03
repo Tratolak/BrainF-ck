@@ -2,6 +2,7 @@
 #include "optimizer.h"
 
 #define ACTION_LIMIT 1000
+#define DEBUG
 
 typedef unsigned char bool;
 #define true 1
@@ -63,24 +64,32 @@ int replace(unsigned char *code,int *jumpTable,int start,int end)
             default:
                 break;
         }
-        //putchar(code[i]);
+        #ifdef DEBUG
+        putchar(code[i]);
+        #endif // DEBUG
     }
-    //putchar(('\n'));
-    //printf ("Local adress is modified by %d every cycle.\n",locAction);
+    #ifdef DEBUG
+    putchar(('\n'));
+
+    printf ("Local adress is modified by %d every cycle.\n",locAction);
+    #endif // DEBUG
     if(locAction==-1)
     {
         // SET ZERO
         code[start]='R';
         for(int i=start+1;i<=end;i++)
             code[i]='x';
-        jumpTable[start]=actionCount;
+        jumpTable[start]=-actionCount;
         //jumpTable[start]=end-start;
-        /*printf("Set current item to be zero, other actions are multiplied by x.\n");
+
+        #ifdef DEBUG
+        printf("Set current item to be zero, other actions are multiplied by x.\n");
         printf("ACTIONS:\n");
         for(int i=0;i<actionCount;i+=2)
         {
             printf("mem. cell:%d\tadding: %d*x\n",jumpTable[start+i+1],jumpTable[start+i+2]);
-        }*/
+        }
+        #endif // DEBUG
     }
     else if(locAction==1)
     {
@@ -89,34 +98,39 @@ int replace(unsigned char *code,int *jumpTable,int start,int end)
         for(int i=start+1;i<=end;i++)
             code[i]='x';
         jumpTable[start]=actionCount;
-        /*printf("Set current item to be zero,but go the other way, other actions are multiplied by 256-x.\n");
+
+        #ifdef DEBUG
+        printf("Set current item to be zero,but go the other way, other actions are multiplied by 256-x.\n");
         printf("ACTIONS:\n");
         for(int i=0;i<actionCount;i++)
         {
             printf("mem. cell:%d\tadding: %d*(256-x)\n",jumpTable[start+i+1],jumpTable[start+i+2]);
-        }*/
+        }
+        #endif
     }
     else if(locAction==0)
     {
-        fprintf(2,"Warning!\nThis cycle won't terminate.\n");
+        printf("Warning!\nThis cycle won't terminate.\n");
     }
     else
     {
-        fprintf(2,"Warning!\nThis cycle might not terminate.\n");
+        printf("Warning!\nThis cycle might not terminate.\n");
     }
 
-    /*for(int i=start;i<=end;i++)
+    #ifdef DEBUG
+    for(int i=start;i<=end;i++)
     {
         printf("%d, ",jumpTable[i]);
-    }*/
-    /*putchar('\n');
+    }
+    putchar('\n');
     for(int i=start-1;i<=end+1;i++)
     {
         printf("%c, ",code[i]);
     }
 
 
-    putchar(('\n'));putchar(('\n'));putchar(('\n'));*/
+    putchar(('\n'));putchar(('\n'));putchar(('\n'));
+    #endif // DEBUG
     return 0;
 }
 
