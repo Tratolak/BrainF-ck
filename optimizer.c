@@ -62,6 +62,7 @@ int replace(unsigned char *code,int *jumpTable,int start,int end)
                     addToActionAry(&actionCount,&jumpTable[start+1],shift,code[i]);
                 break;
             default:
+                return 0;
                 break;
         }
         #ifdef DEBUG

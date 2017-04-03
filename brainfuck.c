@@ -232,7 +232,9 @@ unsigned char getOpCode(unsigned char instruction)
 
 void optimizePrint(FILE *out,int *jumpTable,int tabs)
 {
-
+    for(int it=0;it<tabs;it++)
+        fprintf(out,"\t");
+    fprintf(out,"//Optimized\n");
     //("tab: ");
     for(int i=0;i<abs(jumpTable[0]);i+=2)
     {
@@ -247,7 +249,7 @@ void optimizePrint(FILE *out,int *jumpTable,int tabs)
         if(jumpTable[0]<0)
             fprintf(out,"mem[mPtr+(%d)]+=(%d)*mem[mPtr];\n",shift,mul);
         else
-            fprintf(out,"mem[mPtr+(%d)]+=(256-(%d))*mem[mPtr];\n",shift,mul);
+            fprintf(out,"mem[mPtr+(%d)]+=(%d)*(256-mem[mPtr]);\n",shift,mul);
     }
     //printf("HURááá2");
     for(int it=0;it<tabs;it++)
