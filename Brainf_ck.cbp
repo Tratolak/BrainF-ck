@@ -37,7 +37,7 @@
 		<Unit filename="optimizer.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="otpimizer.h" />
+		<Unit filename="optimizer.h" />
 		<Extensions>
 			<code_completion />
 			<debugger />

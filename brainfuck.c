@@ -8,6 +8,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "optimizer.h"
+
 //Added (Martin Stodulka)
 #ifdef _WIN32
     #include <limits.h>
@@ -181,14 +183,14 @@ void execute(unsigned char *code,unsigned char *mem,int *jumpTable,int size,bool
 			case ',':
 				// Input
 				if(intOut)
-					scanf("\n%u",&mem[mPtr]);
+					scanf("\n%hhu",&mem[mPtr]);
 				else
 					mem[mPtr]=getchar();
 				break;
 			case '.':
 				// Output
 				if(intOut)
-					printf("%u ",mem[mPtr]);
+					printf("%hhu ",mem[mPtr]);
 				else
 					putchar(mem[mPtr]);
 				break;
@@ -228,6 +230,25 @@ unsigned char getOpCode(unsigned char instruction)
 	return M_OTHER;
 }
 
+void optimizePrint(FILE *out,int *jumpTable)
+{
+    jumpTable++;
+
+    while(*jumpTable)
+    {
+
+        int shift=*jumpTable;
+        jumpTable++;
+
+        int mul=*jumpTable;
+        jumpTable++;
+        fprintf(out,"mem[mPtr+(%d)]+=(%d)*mem[mPtr];\n",shift,mul);
+    }
+    //printf("HURááá2");
+    fprintf(out,"   mem[mPtr]=0;\n");
+    return;
+}
+
 int compile(unsigned char *code,int *jumpTable,int size,bool intOut,char *file,bool bNoBuild)
 {
     // In a row variables for optimization
@@ -265,8 +286,7 @@ int compile(unsigned char *code,int *jumpTable,int size,bool intOut,char *file,b
 	"		fprintf(stderr,\"Not enough memory.\\n\");\n"
 	"		return 1;\n"
 	"	}\n"
-	"	for(int i=0;i<SIZE;i++)\n"
-	"		mem[i]=0;\n"
+	"	memset(mem,0,SIZE);\n"
 	"	int mPtr=0;\n"
 	"\n"
 	"// CUSTOM CODE:\n"
@@ -290,7 +310,7 @@ int compile(unsigned char *code,int *jumpTable,int size,bool intOut,char *file,b
         }
 
         //print certain commands immediately
-        if(code[i]==',' || code[i]=='.' || code[i]=='[' || code[i]==']')
+        if(code[i]==',' || code[i]=='.' || code[i]=='[' || code[i]==']' || 'R')
         {
             rowChanged=true;
         }
@@ -360,13 +380,13 @@ int compile(unsigned char *code,int *jumpTable,int size,bool intOut,char *file,b
                     break;
                 case ',':
                     if(intOut)
-                        fprintf(src,"scanf(\"\\n%%u\",&mem[mPtr]);\n");
+                        fprintf(src,"scanf(\"\\n%%hhu\",&mem[mPtr]);\n");
                     else
                         fprintf(src,"mem[mPtr]=getchar();\n");
                     break;
                 case '.':
                     if(intOut)
-                        fprintf(src,"printf(\"%%u \",mem[mPtr]);\n");
+                        fprintf(src,"printf(\"%%hhu \",mem[mPtr]);\n");
                     else
                         fprintf(src,"putchar(mem[mPtr]);\n");
                     break;
@@ -408,6 +428,12 @@ int compile(unsigned char *code,int *jumpTable,int size,bool intOut,char *file,b
 
                     fprintf(src, "}\n");
                     break;
+                case 'R':
+                    // Optimized cycle
+                    printf("Huráá");
+                    optimizePrint(src,&jumpTable[i]);
+                    //i=jumpTable[i]+1;
+                    break;
                 default:
                     break;
             }
@@ -425,6 +451,8 @@ int compile(unsigned char *code,int *jumpTable,int size,bool intOut,char *file,b
 
 	// Print footer
 	fprintf(src,
+	"\n// END OF CODE\n"
+	"\n"
 	"	putchar('\\n');\n"
 	"	free(mem);\n"
 	"	return 0;\n"
@@ -479,11 +507,7 @@ int interpret(int size,bool intOut,bool bCompile,bool bNoBuild,char *file)
 	}
 
 	// Init memory
-	int i;
-	for(i=0;i<size;i++)
-	{
-		mem[i]=(unsigned char)0;
-	}
+	memset(mem,0,size);
 
 
 	// Load code
@@ -505,6 +529,14 @@ int interpret(int size,bool intOut,bool bCompile,bool bNoBuild,char *file)
 		free(jumpTable);
 		return test;
 	}
+
+    //DEBUG
+    optimize(code,jumpTable,size);
+    /*free(code);
+    free(mem);
+    free(jumpTable);*/
+    //exit(0);
+    //////
 
 	if(!bCompile)
 	{

@@ -7,37 +7,36 @@ typedef unsigned char bool;
 #define true 1
 #define false 0
 
-void addToActionAry(int *len,int action[][2],int adrShift,unsigned char op)
+void addToActionAry(int *len,int *jumpTable,int adrShift,unsigned char op)
 {
     int i;
-    for(i=0;i<*len;i++)
+    for(i=0;i<*len;i+=2)
     {
-        if(action[i][0]==adrShift)
+        if(jumpTable[i]==adrShift)
         {
             if(op=='+')
-                action[i][1]++;
+                jumpTable[i+1]++;
             if(op=='-')
-                action[i][1]--;
+                jumpTable[i+1]--;
             return 0;
         }
     }
-    (*len)++;
+    (*len)+=2;
     if(*len>=ACTION_LIMIT)
         return 1;
-    action[*len-1][0]=adrShift;
-    //action[*len-1][1]=0;
+    jumpTable[*len-2]=adrShift;
     if(op=='+')
-        action[*len-1][1]=1;
+        jumpTable[*len-1]=1;
     if(op=='-')
-        action[*len-1][1]=-1;
+        jumpTable[*len-1]=-1;
     return 0;
 }
 
 int replace(unsigned char *code,int *jumpTable,int start,int end)
 {
     int actionCount=0;
-    int actionAry[ACTION_LIMIT][2];
-    int shift;
+    //int actionAry[ACTION_LIMIT][2];
+    int shift=0;
     int locAction=0;
     for(int i=start;i<=end;i++)
     {
@@ -53,58 +52,82 @@ int replace(unsigned char *code,int *jumpTable,int start,int end)
                 if(shift==0)
                     locAction++;
                 else
-                    addToActionAry(&actionCount,actionAry,shift,code[i]);
+                    addToActionAry(&actionCount,&jumpTable[start+1],shift,code[i]);
                 break;
             case '-':
                 if(shift==0)
                     locAction--;
                 else
-                    addToActionAry(&actionCount,actionAry,shift,code[i]);
+                    addToActionAry(&actionCount,&jumpTable[start+1],shift,code[i]);
                 break;
             default:
                 break;
         }
-        putchar(code[i]);
+        //putchar(code[i]);
     }
-    putchar(('\n'));
-    printf ("Local adress is modified by %d every cycle.\n",locAction);
+    //putchar(('\n'));
+    //printf ("Local adress is modified by %d every cycle.\n",locAction);
     if(locAction==-1)
     {
         // SET ZERO
-        printf("Set current item to be zero, other actions are multiplied by x.\n");
+        code[start]='R';
+        for(int i=start+1;i<=end;i++)
+            code[i]='x';
+        //jumpTable[start]=end-start;
+        /*printf("Set current item to be zero, other actions are multiplied by x.\n");
         printf("ACTIONS:\n");
-        for(int i=0;i<actionCount;i++)
+        for(int i=0;i<actionCount;i+=2)
         {
-            printf("mem. cell:%d\tadding: %d*x\n",actionAry[i][0],actionAry[i][1]);
-        }
+            printf("mem. cell:%d\tadding: %d*x\n",jumpTable[start+i+1],jumpTable[start+i+2]);
+        }*/
     }
-    if(locAction==1)
+    else if(locAction==1)
     {
         // SET ZERO
-        printf("Set current item to be zero,but go the other way, other actions are multiplied by 256-x.\n");
+        code[start]='R';
+        for(int i=start+1;i<=end;i++)
+            code[i]='x';
+        //jumpTable[start]=end-start;
+        /*printf("Set current item to be zero,but go the other way, other actions are multiplied by 256-x.\n");
         printf("ACTIONS:\n");
         for(int i=0;i<actionCount;i++)
         {
-            printf("mem. cell:%d\tadding: %d*(256-x)\n",actionAry[i][0],actionAry[i][1]);
-        }
+            printf("mem. cell:%d\tadding: %d*(256-x)\n",jumpTable[start+i+1],jumpTable[start+i+2]);
+        }*/
     }
-    if(locAction==0)
+    else if(locAction==0)
     {
-        printf("This cycle will either not even start, or it wont terminate.\n");
+        fprintf(2,"Warning!\nThis cycle won't terminate.\n");
+    }
+    else
+    {
+        fprintf(2,"Warning!\nThis cycle might not terminate.\n");
+    }
+
+    for(int i=start;i<=end;i++)
+    {
+        printf("%d, ",jumpTable[i]);
+    }
+    putchar('\n');
+    for(int i=start;i<=end;i++)
+    {
+        printf("%c, ",code[i]);
     }
 
 
-    putchar(('\n'));putchar(('\n'));putchar(('\n'));
+    //putchar(('\n'));putchar(('\n'));putchar(('\n'));
     return 0;
 }
 
 int optimize(unsigned char *code,int *jumpTable,int len)
 {
+    unsigned int cntC=0,cntO=0;
+
     for(int i=0;i<len;i++)
     {
         if(code[i]=='[')
         {
-
+            cntC++;
             bool bDepthOne=true;
             int shift=0;
             int j=i+1;
@@ -122,12 +145,14 @@ int optimize(unsigned char *code,int *jumpTable,int len)
             }
             if(bDepthOne && shift==0)
             {
-                printf("Found cycle. pos %d-%d\n",i,j);
+                //printf("Found cycle. pos %d-%d\n",i,j);
+                cntO++;
                 replace(code,jumpTable,i,j);
 
             }
         }
 
     }
+    printf("%u %% from %u cycles replaced (%u).\n",(cntO*100)/cntC,cntC,cntO);
     return 0;
 }
