@@ -230,35 +230,31 @@ unsigned char getOpCode(unsigned char instruction)
 	return M_OTHER;
 }
 
-void optimizePrint(FILE *out,int *jumpTable)
+void optimizePrint(FILE *out,int *jumpTable,int tabs)
 {
-    jumpTable++;
 
-    while(*jumpTable)
+    //("tab: ");
+    for(int i=0;i<jumpTable[0];i+=2)
     {
+        //printf("%d, %d, ",jumpTable[i+1],jumpTable[i+2]);
+        int shift=jumpTable[i+1];
+        //printf("ok\n");
 
-        int shift=*jumpTable;
-        jumpTable++;
+        int mul=jumpTable[i+2];
 
-        int mul=*jumpTable;
-        jumpTable++;
+        for(int it=0;it<tabs;it++)
+            fprintf(out,"\t");
         fprintf(out,"mem[mPtr+(%d)]+=(%d)*mem[mPtr];\n",shift,mul);
     }
     //printf("HURááá2");
-    fprintf(out,"   mem[mPtr]=0;\n");
+    for(int it=0;it<tabs;it++)
+        fprintf(out,"\t");
+    fprintf(out,"mem[mPtr]=0;\n");
     return;
 }
 
 int compile(unsigned char *code,int *jumpTable,int size,bool intOut,char *file,bool bNoBuild)
 {
-    // In a row variables for optimization
-    unsigned char rowCode=M_OTHER;     //current command
-    unsigned char sum=0;     //how many times repeated +,-
-    int rowTimes=0;				// how many times repeated >,<
-    bool rowChanged=false;   //1 if current command changed, 0 otherwise
-
-    //indentation
-    unsigned int indent=1;  //number of tab indentations
 
 	// Open file
 	FILE *src;
@@ -277,6 +273,7 @@ int compile(unsigned char *code,int *jumpTable,int size,bool intOut,char *file,b
 	fprintf(src,
 	"#include <stdio.h>\n"
 	"#include <stdlib.h>\n"
+	"#include <string.h>\n"
 	"#define SIZE %d\n"
 	"\n"
 	"int main()\n"
@@ -293,160 +290,98 @@ int compile(unsigned char *code,int *jumpTable,int size,bool intOut,char *file,b
 	"\n"
 	,size);
 
-	// Print the actual code
 
 	int i=0;
+
+	// Address change
+	int addrShift=0;
+
+	//how many times repeated +,-
+	unsigned char sum=0;
+
+	// indentation
+	unsigned tabs=0;
 	// Read code char by char
 	while(code[i]!='!')
 	{
-	    putchar(code[i]);
-	    //load current command for comparison
-	    rowCode=getOpCode(code[i]);
+	    if(isBFchar(code[i]))
+	    {
+            //putchar(code[i]);
 
-	    //compare (look ahead)
-        if(rowCode!=getOpCode(code[i+1]))
-        {
-            rowChanged=true;
-        }
-
-        //print certain commands immediately
-        if(code[i]==',' || code[i]=='.' || code[i]=='[' || code[i]==']' || 'R')
-        {
-            rowChanged=true;
-        }
-
-        //treat while (brackets []) specially (inside switch)
-        if(rowCode!=M_JMP && rowChanged)
-        {
-            //Indentation
-            for(int iter=0;iter<indent;++iter)
-            {
+            for(int it=0;it<tabs;it++)
                 fprintf(src,"\t");
-            }
         }
-
-        if(code[i]=='>')
-        	rowTimes++;
-        if(code[i]=='<')
-        	rowTimes--;
-        if(code[i]=='+')
-        	sum++;
-        if(code[i]=='-')
-        	sum--;
-
-        if(rowChanged==true)
+        switch(code[i])
         {
-            switch(code[i])
-            {
-                case '+':
-                    if(sum == 1)
-                    {
-                        fprintf(src,"mem[mPtr]++;\n");
-                    }
+            case '+':
+            case '-':
+                sum=0;
+                while(code[i]=='+' || code[i]=='-')
+                {
+                    if(code[i]=='+')
+                        sum++;
                     else
-                    {
-                        fprintf(src,"mem[mPtr]+=%d;\n",sum);
-                    }
-                    break;
-                case '-':
-                    if(sum == 255)
-                    {
-                        fprintf(src,"mem[mPtr]--;\n");
-                    }
+                        sum--;
+                    i++;
+                }
+                i--;
+                    //fprintf(src,"mem[mPtr]--;\n");
+                fprintf(src,"mem[mPtr]+=%d;\n",sum);
+                break;
+            case '<':
+            case '>':
+                addrShift=0;
+                while(code[i]=='>' || code[i]=='<')
+                {
+                    if(code[i]=='>')
+                        addrShift++;
                     else
-                    {
-                        fprintf(src,"mem[mPtr]+=%d;\n",sum);
-                    }
-                    break;
-                case '<':
-                    if(rowTimes == -1)
-                    {
-                        fprintf(src,"mPtr--;\n");
-                    }
-                    else
-                    {
-                        fprintf(src,"mPtr+=%d;\n",rowTimes);
-                    }
-                    break;
-                case '>':
-                    if(rowTimes == 1)
-                    {
-                        fprintf(src,"mPtr++;\n");
-                    }
-                    else
-                    {
-                        fprintf(src,"mPtr+=%d;\n",rowTimes);
-                    }
-                    break;
-                case ',':
-                    if(intOut)
-                        fprintf(src,"scanf(\"\\n%%hhu\",&mem[mPtr]);\n");
-                    else
-                        fprintf(src,"mem[mPtr]=getchar();\n");
-                    break;
-                case '.':
-                    if(intOut)
-                        fprintf(src,"printf(\"%%hhu \",mem[mPtr]);\n");
-                    else
-                        fprintf(src,"putchar(mem[mPtr]);\n");
-                    break;
-                case '[':
-                    //Indentation
-                    for(int iter=0;iter<indent;++iter)
-                    {
-                        fprintf(src,"\t");
-                    }
+                        addrShift--;
+                    i++;
+                }
+                i--;
+                    //fprintf(src,"mPtr++;\n");
 
-                    fprintf(src,"while(mem[mPtr])\n");
+                    fprintf(src,"mPtr+=%d;\n",addrShift);
+                break;
+            case ',':
+                if(intOut)
+                    fprintf(src,"scanf(\"\\n%%hhu\",&mem[mPtr]);\n");
+                else
+                    fprintf(src,"mem[mPtr]=getchar();\n");
+                break;
+            case '.':
+                if(intOut)
+                    fprintf(src,"printf(\"%%hhu \",mem[mPtr]);\n");
+                else
+                    fprintf(src,"putchar(mem[mPtr]);\n");
+                break;
+            case '[':
 
-                    //Pad the '{'
-                    for(int iter=0;iter<indent;++iter)
-                    {
-                        fprintf(src,"\t");
-                    }
+                fprintf(src,"while(mem[mPtr])\n");
+                for(int it=0;it<tabs;it++)
+                    fprintf(src,"\t");
+                fprintf(src,"{\n");
+                tabs++;
+                break;
+            case ']':
 
-                    fprintf(src,"{\n");
-
-                    //Indent after
-                    indent++;
-
-                    if(indent>MAX_INDENT)
-                    {
-                        indent=MAX_INDENT;
-                    }
-
-                    break;
-                case ']':
-                    //Indent before
-                    indent--;
-
-                    //Indentation
-                    for(int iter=0;iter<indent;++iter)
-                    {
-                        fprintf(src,"\t");
-                    }
-
-                    fprintf(src, "}\n");
-                    break;
-                case 'R':
-                    // Optimized cycle
-                    printf("Huráá");
-                    optimizePrint(src,&jumpTable[i]);
-                    //i=jumpTable[i]+1;
-                    break;
-                default:
-                    break;
-            }
-
-            //reset
-            rowChanged=0;
-            rowTimes=0;
-            sum=0;
-
+                fprintf(src, "}\n");
+                tabs--;
+                break;
+            case 'R':
+                // Optimized cycle
+                optimizePrint(src,&jumpTable[i],tabs);
+                break;
+            default:
+                break;
         }
 
         i++;
-	}
+
+    }
+
+
 
 
 	// Print footer
@@ -462,7 +397,7 @@ int compile(unsigned char *code,int *jumpTable,int size,bool intOut,char *file,b
 	// Close file
 	fclose(src);
 
-	printf("ok\n");
+	//printf("ok\n");
 	// Compile
 	if(strlen(file)>PATH_MAX)
 	{
@@ -508,6 +443,7 @@ int interpret(int size,bool intOut,bool bCompile,bool bNoBuild,char *file)
 
 	// Init memory
 	memset(mem,0,size);
+	//memset(jumpTable,0,sizeof(int)*size);
 
 
 	// Load code
@@ -532,6 +468,7 @@ int interpret(int size,bool intOut,bool bCompile,bool bNoBuild,char *file)
 
     //DEBUG
     optimize(code,jumpTable,size);
+    //printf("Optimized\n");
     /*free(code);
     free(mem);
     free(jumpTable);*/

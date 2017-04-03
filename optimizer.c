@@ -73,6 +73,7 @@ int replace(unsigned char *code,int *jumpTable,int start,int end)
         code[start]='R';
         for(int i=start+1;i<=end;i++)
             code[i]='x';
+        jumpTable[start]=actionCount;
         //jumpTable[start]=end-start;
         /*printf("Set current item to be zero, other actions are multiplied by x.\n");
         printf("ACTIONS:\n");
@@ -87,7 +88,7 @@ int replace(unsigned char *code,int *jumpTable,int start,int end)
         code[start]='R';
         for(int i=start+1;i<=end;i++)
             code[i]='x';
-        //jumpTable[start]=end-start;
+        jumpTable[start]=actionCount;
         /*printf("Set current item to be zero,but go the other way, other actions are multiplied by 256-x.\n");
         printf("ACTIONS:\n");
         for(int i=0;i<actionCount;i++)
@@ -104,18 +105,18 @@ int replace(unsigned char *code,int *jumpTable,int start,int end)
         fprintf(2,"Warning!\nThis cycle might not terminate.\n");
     }
 
-    for(int i=start;i<=end;i++)
+    /*for(int i=start;i<=end;i++)
     {
         printf("%d, ",jumpTable[i]);
-    }
-    putchar('\n');
-    for(int i=start;i<=end;i++)
+    }*/
+    /*putchar('\n');
+    for(int i=start-1;i<=end+1;i++)
     {
         printf("%c, ",code[i]);
     }
 
 
-    //putchar(('\n'));putchar(('\n'));putchar(('\n'));
+    putchar(('\n'));putchar(('\n'));putchar(('\n'));*/
     return 0;
 }
 
