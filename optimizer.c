@@ -61,8 +61,11 @@ int replace(unsigned char *code,int *jumpTable,int start,int end)
                 else
                     addToActionAry(&actionCount,&jumpTable[start+1],shift,code[i]);
                 break;
-            default:
+            case '.':
+            case ',':
                 return 0;
+                break;
+            default:
                 break;
         }
         #ifdef DEBUG
@@ -132,7 +135,7 @@ int replace(unsigned char *code,int *jumpTable,int start,int end)
 
     putchar(('\n'));putchar(('\n'));putchar(('\n'));
     #endif // DEBUG
-    return 0;
+    return 1;
 }
 
 int optimize(unsigned char *code,int *jumpTable,int len)
@@ -162,8 +165,7 @@ int optimize(unsigned char *code,int *jumpTable,int len)
             if(bDepthOne && shift==0)
             {
                 //printf("Found cycle. pos %d-%d\n",i,j);
-                cntO++;
-                replace(code,jumpTable,i,j);
+                cntO+=replace(code,jumpTable,i,j);
 
             }
         }
